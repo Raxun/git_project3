@@ -1,22 +1,19 @@
 from __future__ import unicode_literals
 import discord
-import asyncio
 from discord.ext import commands
-from discord_webhook import DiscordWebhook
 import spotipy
 from spotipy.oauth2 import SpotifyClientCredentials
 from youtubesearchpython import VideosSearch
 import youtube_dl
-import os
 
 
 bot = commands.Bot(command_prefix='!')
-TOKEN = "BOT_TOKEN"
+TOKEN = ""
 FFMPEG_OPTIONS = {'before_options': '-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5', 'options': '-vn'}
 
 '''SpotifyApi'''
-client_id = "ID"  # Сюда вводим полученные данные из панели спотифая
-secret = "SECRET_KEY"  # Сюда вводим полученные данные из панели спотифая
+client_id = ""  # Сюда вводим полученные данные из панели спотифая
+secret = ""  # Сюда вводим полученные данные из панели спотифая
 
 auth_manager = SpotifyClientCredentials(client_id=client_id, client_secret=secret)
 spotify = spotipy.Spotify(auth_manager=auth_manager)
@@ -27,12 +24,12 @@ music = []
 em_help = discord.Embed(title="", colour=0x87CEEB)
 em_help_music = discord.Embed(title="", colour=0x87CEEB)
 em_help.set_author(name="Raxun", icon_url="https://avatars.githubusercontent.com/u/94015674?s=400&u=7d739"
-                                              "fe0e1593df54e804fb6e097f597a3a838d7&v=4")
+                                          "fe0e1593df54e804fb6e097f597a3a838d7&v=4")
 em_help.add_field(name="Команды", value="!музыка", inline=False)
 em_help_music.set_author(name="Raxun", icon_url="https://avatars.githubusercontent.com/u/94015674?s=400&u=7d739"
                                                 "fe0e1593df54e804fb6e097f597a3a838d7&v=4")
 em_help_music.add_field(name="Команды", value="!плейлист (ссылка Spotify/название) !очистить плейлист !плейлист "
-                                              "!стоп !старт !скип", inline=False)
+                                              "!стоп !старт !скип !трек (последний трек)", inline=False)
 
 
 @bot.event
@@ -90,7 +87,11 @@ async def playlist(ctx):
         else:
             vidsearch = VideosSearch(ctx.message.content[9:-1], limit=1)
             mus_info = vidsearch.result()["result"][0]["title"]
-            name = mus_info[:mus_info.find('(')]
+            print(mus_info)
+            if mus_info.find('(') != -1:
+                name = mus_info[:mus_info.find('(')]
+            else:
+                name = mus_info
             sp_music.append(name)
             em_playlist.description = '\n'.join(sp_music)
             await ctx.message.channel.send(embed=em_playlist)
@@ -111,20 +112,29 @@ async def playlist(ctx):
 
 @bot.command('старт')
 async def start_music(ctx):
-    if len(sp_music) != 0:
-        if not ctx.voice_client:
-            voice_channel = ctx.message.author.voice.channel
-            await voice_channel.connect()
-        em_play = discord.Embed(title="Сейчас играет", description=sp_music[0], colour=0x87CEEB)
-        em_play.set_author(name="Raxun", icon_url="https://avatars.githubusercontent.com/u/94015674?s=400&u=7d739"
-                                                  "fe0e1593df54e804fb6e097f597a3a838d7&v=4")
-        await ctx.message.channel.send(embed=em_play)
-        play_music(ctx)
-    else:
-        em_playlist = discord.Embed(title="Плейлист пуст!", colour=0x87CEEB)
-        em_playlist.set_author(name="Raxun", icon_url="https://avatars.githubusercontent.com/u/94015674?s=400&u=7d739"
+    if not ctx.voice_client:
+        voice_channel = ctx.message.author.voice.channel
+        await voice_channel.connect()
+    if not ctx.voice_client.is_playing():
+        if len(sp_music) != 0:
+            em_play = discord.Embed(title="Сейчас играет", description=sp_music[0], colour=0x87CEEB)
+            em_play.set_author(name="Raxun", icon_url="https://avatars.githubusercontent.com/u/94015674?s=400&u=7d739"
                                                       "fe0e1593df54e804fb6e097f597a3a838d7&v=4")
-        await ctx.message.channel.send(embed=em_playlist)
+            await ctx.message.channel.send(embed=em_play)
+            play_music(ctx)
+        else:
+            em_playlist = discord.Embed(title="Плейлист пуст!", description="Используйте команду !плейлист (название / "
+                                                                            "ссылка на spotify) для добавления трека "
+                                                                            "в очередь)", colour=0x87CEEB)
+            em_playlist.set_author(name="Raxun", icon_url="https://avatars.githubusercontent.com/u/94015674?s=400&u=7d"
+                                                          "739fe0e1593df54e804fb6e097f597a3a838d7&v=4")
+            await ctx.message.channel.send(embed=em_playlist)
+    else:
+        em_playerror = discord.Embed(title="Музыка уже играет!", description='Для пропуска используйте команду !скип',
+                                     colour=0x87CEEB)
+        em_playerror.set_author(name="Raxun", icon_url="https://avatars.githubusercontent.com/u/94015674?s=400&u=7d739"
+                                                       "fe0e1593df54e804fb6e097f597a3a838d7&v=4")
+        await ctx.message.channel.send(embed=em_playerror)
 
 
 @bot.command('стоп')
@@ -154,7 +164,7 @@ def play_music(ctx):
     music.append(sp_music[0])
     del sp_music[0]
     ctx.voice_client.play(discord.FFmpegPCMAudio(executable="ffmpeg.exe", source=url_music, **FFMPEG_OPTIONS),
-                          after=lambda e: start_music(ctx))
+                          after=lambda e: play_music(ctx))
 
 
 def music_url(music_info):
