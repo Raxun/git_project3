@@ -27,7 +27,7 @@ em_help = discord.Embed(title="", colour=0x87CEEB)
 em_help_music = discord.Embed(title="", colour=0x87CEEB)
 em_help.set_author(name="Raxun", icon_url="https://avatars.githubusercontent.com/u/94015674?s=400&u=7d739"
                                           "fe0e1593df54e804fb6e097f597a3a838d7&v=4")
-em_help.add_field(name="Команды", value="!музыка", inline=False)
+em_help.add_field(name="Команды", value="!музыка! !лвл !топ", inline=False)
 em_help_music.set_author(name="Raxun", icon_url="https://avatars.githubusercontent.com/u/94015674?s=400&u=7d739"
                                                 "fe0e1593df54e804fb6e097f597a3a838d7&v=4")
 em_help_music.add_field(name="Команды", value="!плейлист (ссылка Spotify/название) !очистить плейлист !плейлист "
