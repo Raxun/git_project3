@@ -188,7 +188,7 @@ async def check_level(ctx):
 async def check_level(ctx):
     db_session.global_init("db/users_lvl.db")
     db_sess = db_session.create_session()
-    users = db_sess.query(User).order_by(User.lvl.desc()).all()
+    users = db_sess.query(User).filter(User.id_server == int(ctx.message.guild.id)).order_by(User.lvl.desc()).all()
     sp_top_users = [f"<@{user.id_user}> - {user.lvl} уровень" for user in users]
     em_sp_tops = discord.Embed(title="Топ сервера", colour=0x87CEEB)
     em_sp_tops.set_author(name="Raxun", icon_url="https://avatars.githubusercontent.com/u/94015674?s=400&"
