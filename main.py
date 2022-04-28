@@ -7,11 +7,15 @@ from youtubesearchpython import VideosSearch
 import youtube_dl
 from data import db_session
 from data.User import User
+from data.Roles import Roles
 
-bot = commands.Bot(command_prefix='!')
+
+intents = discord.Intents.default()
+intents.members = True
+bot = commands.Bot(command_prefix='!', intents=intents)
 TOKEN = ""
 FFMPEG_OPTIONS = {'before_options': '-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5', 'options': '-vn'}
-db_user = User()
+
 
 '''SpotifyApi'''
 client_id = ""  # Сюда вводим полученные данные из панели спотифая
@@ -25,9 +29,12 @@ music = []
 
 em_help = discord.Embed(title="", colour=0x87CEEB)
 em_help_music = discord.Embed(title="", colour=0x87CEEB)
+em_roles = discord.Embed(title="Команды для работы с ролями", colour=0x87CEEB)
+em_roles.set_author(name="Raxun", icon_url="https://avatars.githubusercontent.com/u/94015674?s=400&u=7d739"
+                                           "fe0e1593df54e804fb6e097f597a3a838d7&v=4")
 em_help.set_author(name="Raxun", icon_url="https://avatars.githubusercontent.com/u/94015674?s=400&u=7d739"
                                           "fe0e1593df54e804fb6e097f597a3a838d7&v=4")
-em_help.add_field(name="Команды", value="!музыка! !лвл !топ", inline=False)
+em_help.add_field(name="Команды", value="!музыка! !лвл !топ !роли", inline=False)
 em_help_music.set_author(name="Raxun", icon_url="https://avatars.githubusercontent.com/u/94015674?s=400&u=7d739"
                                                 "fe0e1593df54e804fb6e097f597a3a838d7&v=4")
 em_help_music.add_field(name="Команды", value="!плейлист (ссылка Spotify/название) !очистить плейлист !плейлист "
@@ -52,6 +59,21 @@ async def on_message(message):
     else:
         await check_user(message.guild.id, message.author.id, message)
     await bot.process_commands(message)
+
+
+@bot.event
+async def on_guild_join(guild):
+    db_session.global_init("db/users_lvl.db")
+    db_sess = db_session.create_session()
+    roles = db_sess.query(Roles).filter(Roles.id_owner == int(guild.owner.id), Roles.id_server == int(guild.id)).first()
+    if roles is None:
+        new_server = User()
+        new_server.id_owner = guild.owner.id
+        new_server.id_server = guild.id
+        new_server.banned_role = ''
+        new_server.admitted_users = ''
+        db_sess.add(new_server)
+        db_sess.commit()
 
 
 @bot.command('помощь')
@@ -88,8 +110,6 @@ async def playlist(ctx):
             await ctx.message.channel.send(embed=em_playlist)
         else:
             vidsearch = VideosSearch(ctx.message.content[9:-1], limit=1)
-
-            print(vidsearch.result()["result"][0])
             mus_info = vidsearch.result()["result"][0]["title"]
             if mus_info.find('(') != -1:
                 name = mus_info[:mus_info.find('(')]
@@ -155,8 +175,6 @@ async def skip_music(ctx):
 async def clear_music(ctx):
     sp_music.clear()
     em_playlist = discord.Embed(title="Плейлист пуст!", colour=0x87CEEB)
-    em_playlist.set_author(name="Raxun", icon_url="https://avatars.githubusercontent.com/u/94015674?s=400&u=7d739"
-                                                  "fe0e1593df54e804fb6e097f597a3a838d7&v=4")
     await ctx.message.channel.send(embed=em_playlist)
 
 
@@ -171,8 +189,7 @@ async def check_level(ctx):
         em_level_info = discord.Embed(title=f"Ваш уровень - {user.lvl}",
                                       description=f"опыта {user_message[0]} из {user_message[-1]}", colour=0x87CEEB)
         em_level_info.set_author(name="Raxun", icon_url="https://avatars.githubusercontent.com/u/94015674?s=400&"
-                                                           "u=7d739fe0e1593df54e804fb6e097f597a3a838d7&v=4")
-
+                                                        "u=7d739fe0e1593df54e804fb6e097f597a3a838d7&v=4")
         await ctx.message.channel.send(embed=em_level_info)
     else:
         new_user = User()
@@ -197,33 +214,138 @@ async def check_level(ctx):
     await ctx.message.channel.send(embed=em_sp_tops)
 
 
+@bot.command('роли')
+async def roles(ctx):
+    db_session.global_init("db/users_lvl.db")
+    db_sess = db_session.create_session()
+    print(int(ctx.guild.owner.id))
+    roles = db_sess.query(Roles).filter(Roles.id_owner == int(ctx.message.guild.owner.id),
+                                        Roles.id_server == int(ctx.message.guild.id)).first()
+    if roles.id_owner == int(ctx.message.guild.owner.id):
+        em_roles.description = '!роль @роль @пользователь !выдача @тег пользователя, который сможет выдать роль ' \
+                               '!запрет @тег роли, которую нельзя будет выдать'
+    else:
+        em_roles.description = '!роль @роль @пользователь'
+    await ctx.message.channel.send(embed=em_roles)
+
+
+@bot.command('выдача')
+async def roles(ctx, user):
+    db_session.global_init("db/users_lvl.db")
+    db_sess = db_session.create_session()
+    roles = db_sess.query(Roles).filter(Roles.id_owner == int(ctx.message.guild.owner.id),
+                                        Roles.id_server == int(ctx.message.guild.id)).first()
+    if roles.id_owner == ctx.message.author.id and '<@' in ctx.message.content:
+        roles.admitted_users = f"{roles.admitted_users} {user[3:-1]}"
+        complete = discord.Embed(title="Выполнено!", description='Добавлен новый пользователь', colour=0x87CEEB)
+        complete.set_author(name="Raxun", icon_url="https://avatars.githubusercontent.com/u/94015674?s=400&"
+                                                   "=7d739fe0e1593df54e804fb6e097f597a3a838d7&v=4")
+        db_sess.add(roles)
+        db_sess.commit()
+        await ctx.message.channel.send(embed=complete)
+    else:
+        if roles.id_owner != ctx.message.author.id:
+            error1 = discord.Embed(title="Ошибка!", description='Эту команду может использовать только владелец '
+                                                                       'сервера', colour=0x87CEEB)
+            error1.set_author(name="Raxun", icon_url="https://avatars.githubusercontent.com/u/94015674?s=400&"
+                                                            "=7d739fe0e1593df54e804fb6e097f597a3a838d7&v=4")
+            await ctx.message.channel.send(error1)
+        else:
+            error2 = discord.Embed(title="Ошибка!", description='Введите !выдача @тег пользователя',
+                                  colour=0x87CEEB)
+            error2.set_author(name="Raxun", icon_url="https://avatars.githubusercontent.com/u/94015674?s=400&"
+                                                     "=7d739fe0e1593df54e804fb6e097f597a3a838d7&v=4")
+            await ctx.message.channel.send(embed=error2)
+
+
+@bot.command('запрет')
+async def roles(ctx, role):
+    db_session.global_init("db/users_lvl.db")
+    db_sess = db_session.create_session()
+    roles = db_sess.query(Roles).filter(Roles.id_owner == int(ctx.message.guild.owner.id),
+                                        Roles.id_server == int(ctx.message.guild.id)).first()
+    if roles.id_owner == ctx.message.author.id and '<@' in ctx.message.content:
+        roles.banned_role = f"{roles.banned_role} {role[3:-1]}"
+        complete = discord.Embed(title="Выполнено!", description='Добавлена новая запрещенная роль', colour=0x87CEEB)
+        complete.set_author(name="Raxun", icon_url="https://avatars.githubusercontent.com/u/94015674?s=400&"
+                                                 "=7d739fe0e1593df54e804fb6e097f597a3a838d7&v=4")
+        db_sess.add(roles)
+        db_sess.commit()
+        await ctx.message.channel.send(embed=complete)
+    else:
+        if roles.id_owner != ctx.message.author.id:
+            error1 = discord.Embed(title="Ошибка!", description='Эту команду может использовать только владелец '
+                                                                       'сервера', colour=0x87CEEB)
+            error1.set_author(name="Raxun", icon_url="https://avatars.githubusercontent.com/u/94015674?s=400&"
+                                                            "=7d739fe0e1593df54e804fb6e097f597a3a838d7&v=4")
+            await ctx.message.channel.send(error1)
+        else:
+            error2 = discord.Embed(title="Ошибка!", description='Произошла ошибка! введите !запрещенные @тег роли'
+                                                                'сервера', colour=0x87CEEB)
+            error2.set_author(name="Raxun", icon_url="https://avatars.githubusercontent.com/u/94015674?s=400&"
+                                                     "=7d739fe0e1593df54e804fb6e097f597a3a838d7&v=4")
+            await ctx.message.channel.send(embed=error2)
+
+
+@bot.command('роль')
+async def roles(ctx, role, user: discord.Member):
+    db_session.global_init("db/users_lvl.db")
+    db_sess = db_session.create_session()
+    roles = db_sess.query(Roles).filter(Roles.id_server == int(ctx.message.guild.id)).first()
+    if ' ' in str(roles.admitted_users):
+        sp_admitted_users = roles.admitted_users.split(' ')
+    else:
+        sp_admitted_users = str(roles.admitted_users)
+    if ' ' in str(roles.banned_role):
+        sp_banned_role = roles.banned_role.split(' ')
+    else:
+        sp_banned_role = str(roles.banned_role)
+    if '<@' in role:
+        role_ds = ctx.guild.get_role(int(role[3:-1]))
+        if (ctx.message.author.id in sp_admitted_users or ctx.message.author.id == roles.id_owner) \
+                and '<@' in ctx.message.content and role[3:-1] not in sp_banned_role:
+            await user.add_roles(role_ds)
+        else:
+            em_info_roles = discord.Embed(title="Ошибка!", description='Эту команду могут использовать только допущенны'
+                                                                       'е пользователи, с учетом что роль является разр'
+                                                                       'ешенной для выдачи', colour=0x87CEEB)
+            em_info_roles.set_author(name="Raxun", icon_url="https://avatars.githubusercontent.com/u/94015674?s=400&"
+                                                            "=7d739fe0e1593df54e804fb6e097f597a3a838d7&v=4")
+            await ctx.message.channel.send(embed=em_info_roles)
+    else:
+        em_info_roles = discord.Embed(title="Ошибка!", description='Введите !роль @тег роли @тег пользователя',
+                                      colour=0x87CEEB)
+        await ctx.message.channel.send(embed=em_info_roles)
+
+
 async def check_user(server_id, user_id, message):
     db_session.global_init("db/users_lvl.db")
     db_sess = db_session.create_session()
     user = db_sess.query(User).filter(User.id_user == int(user_id), User.id_server == int(server_id)).first()
-    if user is not None:
-        user_message = user.NumberOfMessage.split('/')
-        if user_message[0] == user_message[-1]:
-            user.NumberOfMessage = f"{0}/{int(user_message[-1]) * 2}"
-            user.lvl = user.lvl + 1
-            em_user_level_up = discord.Embed(title="", colour=0x87CEEB)
-            em_user_level_up.set_author(name="Raxun", icon_url="https://avatars.githubusercontent.com/u/94015674?s=400&"
-                                                               "u=7d739fe0e1593df54e804fb6e097f597a3a838d7&v=4")
-            em_user_level_up.add_field(name="Новый уровень", value=f"<@{user.id_user}> теперь {user.lvl} уровня!",
-                                       inline=False)
-            await message.channel.send(embed=em_user_level_up)
-            db_sess.commit()
+    if message.content[0] != '!':
+        if user is not None:
+            user_message = user.NumberOfMessage.split('/')
+            if user_message[0] == user_message[-1]:
+                user.NumberOfMessage = f"{0}/{int(user_message[-1]) * 2}"
+                user.lvl = user.lvl + 1
+                em_user_level_up = discord.Embed(title="", colour=0x87CEEB)
+                em_user_level_up.set_author(name="Raxun", icon_url="https://avatars.githubusercontent.com/u/94015674?s="
+                                                                   "400&u=7d739fe0e1593df54e804fb6e097f597a3a838d7&v=4")
+                em_user_level_up.add_field(name="Новый уровень", value=f"<@{user.id_user}> теперь {user.lvl} уровня!",
+                                           inline=False)
+                await message.channel.send(embed=em_user_level_up)
+                db_sess.commit()
+            else:
+                user.NumberOfMessage = f"{int(user_message[0]) + 1}/{user_message[-1]}"
+                db_sess.commit()
         else:
-            user.NumberOfMessage = f"{int(user_message[0]) + 1}/{user_message[-1]}"
+            new_user = User()
+            new_user.id_user = user_id
+            new_user.id_server = server_id
+            new_user.NumberOfMessage = '0/10'
+            new_user.lvl = 1
+            db_sess.add(new_user)
             db_sess.commit()
-    else:
-        new_user = User()
-        new_user.id_user = user_id
-        new_user.id_server = server_id
-        new_user.NumberOfMessage = '0/10'
-        new_user.lvl = 1
-        db_sess.add(new_user)
-        db_sess.commit()
 
 
 def play_music(ctx):
