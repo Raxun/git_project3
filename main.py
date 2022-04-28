@@ -246,13 +246,13 @@ async def roles(ctx, user):
     else:
         if roles.id_owner != ctx.message.author.id:
             error1 = discord.Embed(title="Ошибка!", description='Эту команду может использовать только владелец '
-                                                                       'сервера', colour=0x87CEEB)
+                                                                'сервера', colour=0x87CEEB)
             error1.set_author(name="Raxun", icon_url="https://avatars.githubusercontent.com/u/94015674?s=400&"
-                                                            "=7d739fe0e1593df54e804fb6e097f597a3a838d7&v=4")
-            await ctx.message.channel.send(error1)
+                                                     "=7d739fe0e1593df54e804fb6e097f597a3a838d7&v=4")
+            await ctx.message.channel.send(embed=error1)
         else:
             error2 = discord.Embed(title="Ошибка!", description='Введите !выдача @тег пользователя',
-                                  colour=0x87CEEB)
+                                   colour=0x87CEEB)
             error2.set_author(name="Raxun", icon_url="https://avatars.githubusercontent.com/u/94015674?s=400&"
                                                      "=7d739fe0e1593df54e804fb6e097f597a3a838d7&v=4")
             await ctx.message.channel.send(embed=error2)
@@ -268,17 +268,17 @@ async def roles(ctx, role):
         roles.banned_role = f"{roles.banned_role} {role[3:-1]}"
         complete = discord.Embed(title="Выполнено!", description='Добавлена новая запрещенная роль', colour=0x87CEEB)
         complete.set_author(name="Raxun", icon_url="https://avatars.githubusercontent.com/u/94015674?s=400&"
-                                                 "=7d739fe0e1593df54e804fb6e097f597a3a838d7&v=4")
+                                                   "=7d739fe0e1593df54e804fb6e097f597a3a838d7&v=4")
         db_sess.add(roles)
         db_sess.commit()
         await ctx.message.channel.send(embed=complete)
     else:
         if roles.id_owner != ctx.message.author.id:
             error1 = discord.Embed(title="Ошибка!", description='Эту команду может использовать только владелец '
-                                                                       'сервера', colour=0x87CEEB)
+                                                                'сервера', colour=0x87CEEB)
             error1.set_author(name="Raxun", icon_url="https://avatars.githubusercontent.com/u/94015674?s=400&"
-                                                            "=7d739fe0e1593df54e804fb6e097f597a3a838d7&v=4")
-            await ctx.message.channel.send(error1)
+                                                     "=7d739fe0e1593df54e804fb6e097f597a3a838d7&v=4")
+            await ctx.message.channel.send(embed=error1)
         else:
             error2 = discord.Embed(title="Ошибка!", description='Произошла ошибка! введите !запрещенные @тег роли'
                                                                 'сервера', colour=0x87CEEB)
