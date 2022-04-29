@@ -9,6 +9,6 @@ class Roles(SqlAlchemyBase):
                            primary_key=True, autoincrement=True)
     id_server = sqlalchemy.Column(sqlalchemy.Integer, nullable=False)
     id_owner = sqlalchemy.Column(sqlalchemy.Integer, nullable=False)
-    banned_role = sqlalchemy.Column(sqlalchemy.String)
-    admitted_users = sqlalchemy.Column(sqlalchemy.String)
+    banned_role = sqlalchemy.Column(sqlalchemy.String, nullable=True)
+    admitted_users = sqlalchemy.Column(sqlalchemy.String, nullable=True)
 

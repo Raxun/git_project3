@@ -67,13 +67,25 @@ async def on_guild_join(guild):
     db_sess = db_session.create_session()
     roles = db_sess.query(Roles).filter(Roles.id_owner == int(guild.owner.id), Roles.id_server == int(guild.id)).first()
     if roles is None:
-        new_server = User()
+        print('ok')
+        new_server = Roles()
         new_server.id_owner = guild.owner.id
         new_server.id_server = guild.id
         new_server.banned_role = ''
         new_server.admitted_users = ''
         db_sess.add(new_server)
         db_sess.commit()
+
+
+@bot.event
+async def on_command_error(ctx, error):
+    if isinstance(error, commands.MemberNotFound):
+        em_error = discord.Embed(title="Ошибка!", description='Пользователь не найден. Введите корректный тег',
+                                 colour=0x87CEEB)
+        em_error.set_author(name="Raxun", icon_url="https://avatars.githubusercontent.com/u/94015674?s=400&u=7d739"
+                                                  "fe0e1593df54e804fb6e097f597a3a838d7&v=4")
+        await ctx.message.channel.send(embed=em_error)
+    print(error)
 
 
 @bot.command('помощь')
@@ -230,13 +242,19 @@ async def roles(ctx):
 
 
 @bot.command('выдача')
-async def roles(ctx, user):
+async def add_user(ctx, user):
     db_session.global_init("db/users_lvl.db")
     db_sess = db_session.create_session()
     roles = db_sess.query(Roles).filter(Roles.id_owner == int(ctx.message.guild.owner.id),
                                         Roles.id_server == int(ctx.message.guild.id)).first()
-    if roles.id_owner == ctx.message.author.id and '<@' in ctx.message.content:
-        roles.admitted_users = f"{roles.admitted_users} {user[3:-1]}"
+    admitted_users = str(roles.admitted_users)
+    try:
+        add_users = admitted_users.split(' ')
+    except TypeError or AttributeError:
+        add_users = [str(roles.admitted_users)]
+    if str(roles.id_owner) == str(ctx.message.author.id) and '<@' in ctx.message.content \
+            and user[2:-1] not in add_users:
+        roles.admitted_users = f"{roles.admitted_users} {user[2:-1]}"
         complete = discord.Embed(title="Выполнено!", description='Добавлен новый пользователь', colour=0x87CEEB)
         complete.set_author(name="Raxun", icon_url="https://avatars.githubusercontent.com/u/94015674?s=400&"
                                                    "=7d739fe0e1593df54e804fb6e097f597a3a838d7&v=4")
@@ -244,7 +262,12 @@ async def roles(ctx, user):
         db_sess.commit()
         await ctx.message.channel.send(embed=complete)
     else:
-        if roles.id_owner != ctx.message.author.id:
+        if user[2:-1] in add_users:
+            error1 = discord.Embed(title="Ошибка!", description='Пользователь уже может выдавать роли', colour=0x87CEEB)
+            error1.set_author(name="Raxun", icon_url="https://avatars.githubusercontent.com/u/94015674?s=400&"
+                                                     "=7d739fe0e1593df54e804fb6e097f597a3a838d7&v=4")
+            await ctx.message.channel.send(embed=error1)
+        elif roles.id_owner != ctx.message.author.id:
             error1 = discord.Embed(title="Ошибка!", description='Эту команду может использовать только владелец '
                                                                 'сервера', colour=0x87CEEB)
             error1.set_author(name="Raxun", icon_url="https://avatars.githubusercontent.com/u/94015674?s=400&"
@@ -259,12 +282,18 @@ async def roles(ctx, user):
 
 
 @bot.command('запрет')
-async def roles(ctx, role):
+async def ban_roles(ctx, role):
     db_session.global_init("db/users_lvl.db")
     db_sess = db_session.create_session()
     roles = db_sess.query(Roles).filter(Roles.id_owner == int(ctx.message.guild.owner.id),
                                         Roles.id_server == int(ctx.message.guild.id)).first()
-    if roles.id_owner == ctx.message.author.id and '<@' in ctx.message.content:
+    banned_role = str(roles.banned_role)
+    try:
+        ban_role = banned_role.split(' ')
+    except TypeError or AttributeError:
+        ban_role = [str(roles.banned_role)]
+    if str(roles.id_owner) == str(ctx.message.author.id) and '<@' in ctx.message.content \
+            and role[3:-1] not in ban_role:
         roles.banned_role = f"{roles.banned_role} {role[3:-1]}"
         complete = discord.Embed(title="Выполнено!", description='Добавлена новая запрещенная роль', colour=0x87CEEB)
         complete.set_author(name="Raxun", icon_url="https://avatars.githubusercontent.com/u/94015674?s=400&"
@@ -273,37 +302,48 @@ async def roles(ctx, role):
         db_sess.commit()
         await ctx.message.channel.send(embed=complete)
     else:
-        if roles.id_owner != ctx.message.author.id:
-            error1 = discord.Embed(title="Ошибка!", description='Эту команду может использовать только владелец '
-                                                                'сервера', colour=0x87CEEB)
+        if role[3:-1] in ban_role:
+            error1 = discord.Embed(title="Ошибка!", description='Роль уже запрещена для выдачи', colour=0x87CEEB)
             error1.set_author(name="Raxun", icon_url="https://avatars.githubusercontent.com/u/94015674?s=400&"
                                                      "=7d739fe0e1593df54e804fb6e097f597a3a838d7&v=4")
             await ctx.message.channel.send(embed=error1)
-        else:
-            error2 = discord.Embed(title="Ошибка!", description='Произошла ошибка! введите !запрещенные @тег роли'
+        elif roles.id_owner != ctx.message.author.id:
+            error2 = discord.Embed(title="Ошибка!", description='Эту команду может использовать только владелец '
                                                                 'сервера', colour=0x87CEEB)
             error2.set_author(name="Raxun", icon_url="https://avatars.githubusercontent.com/u/94015674?s=400&"
                                                      "=7d739fe0e1593df54e804fb6e097f597a3a838d7&v=4")
             await ctx.message.channel.send(embed=error2)
+        else:
+            error3 = discord.Embed(title="Ошибка!", description='Произошла ошибка! введите !запрещенные @тег роли'
+                                                                ' сервера', colour=0x87CEEB)
+            error3.set_author(name="Raxun", icon_url="https://avatars.githubusercontent.com/u/94015674?s=400&"
+                                                     "=7d739fe0e1593df54e804fb6e097f597a3a838d7&v=4")
+            await ctx.message.channel.send(embed=error3)
 
 
 @bot.command('роль')
-async def roles(ctx, role, user: discord.Member):
+async def role(ctx, role, user: discord.Member):
     db_session.global_init("db/users_lvl.db")
     db_sess = db_session.create_session()
     roles = db_sess.query(Roles).filter(Roles.id_server == int(ctx.message.guild.id)).first()
-    if ' ' in str(roles.admitted_users):
-        sp_admitted_users = roles.admitted_users.split(' ')
-    else:
-        sp_admitted_users = str(roles.admitted_users)
-    if ' ' in str(roles.banned_role):
-        sp_banned_role = roles.banned_role.split(' ')
-    else:
-        sp_banned_role = str(roles.banned_role)
+    admitted_users = str(roles.admitted_users)
+    try:
+        add_users = admitted_users.split(' ')
+    except TypeError or AttributeError:
+        add_users = [str(roles.admitted_users)]
+    banned_role = str(roles.banned_role)
+    try:
+        ban_role = banned_role.split(' ')
+    except TypeError or AttributeError:
+        ban_role = [str(roles.banned_role)]
     if '<@' in role:
         role_ds = ctx.guild.get_role(int(role[3:-1]))
-        if (ctx.message.author.id in sp_admitted_users or ctx.message.author.id == roles.id_owner) \
-                and '<@' in ctx.message.content and role[3:-1] not in sp_banned_role:
+        if (str(ctx.message.author.id) in add_users or str(ctx.message.author.id) == str(roles.id_owner)) \
+                and role[2:-1] not in ban_role:
+            em_info_roles = discord.Embed(title="Выполнено!", description='Роль выдана', colour=0x87CEEB)
+            em_info_roles.set_author(name="Raxun", icon_url="https://avatars.githubusercontent.com/u/94015674?s=400&"
+                                                            "=7d739fe0e1593df54e804fb6e097f597a3a838d7&v=4")
+            await ctx.message.channel.send(embed=em_info_roles)
             await user.add_roles(role_ds)
         else:
             em_info_roles = discord.Embed(title="Ошибка!", description='Эту команду могут использовать только допущенны'
@@ -322,6 +362,7 @@ async def check_user(server_id, user_id, message):
     db_session.global_init("db/users_lvl.db")
     db_sess = db_session.create_session()
     user = db_sess.query(User).filter(User.id_user == int(user_id), User.id_server == int(server_id)).first()
+    print(user_id)
     if message.content[0] != '!':
         if user is not None:
             user_message = user.NumberOfMessage.split('/')

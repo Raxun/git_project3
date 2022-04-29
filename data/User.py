@@ -8,8 +8,8 @@ class User(SqlAlchemyBase):
 
     id = sqlalchemy.Column(sqlalchemy.Integer,
                            primary_key=True, autoincrement=True)
-    id_server = sqlalchemy.Column(sqlalchemy.Integer, nullable=False)
-    id_user = sqlalchemy.Column(sqlalchemy.Integer, nullable=False)
+    id_server = sqlalchemy.Column(sqlalchemy.Integer)
+    id_user = sqlalchemy.Column(sqlalchemy.Integer)
     NumberOfMessage = sqlalchemy.Column(sqlalchemy.String)
     lvl = sqlalchemy.Column(sqlalchemy.Integer)
 
