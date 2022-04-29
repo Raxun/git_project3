@@ -13,13 +13,13 @@ from data.Roles import Roles
 intents = discord.Intents.default()
 intents.members = True
 bot = commands.Bot(command_prefix='!', intents=intents)
-TOKEN = ""
+TOKEN = "OTQ5OTYxODU1NDQ5ODQ5ODc2.YiR-6w.MejxbQtGJV3WwYbjnQDqaWlkEU0"
 FFMPEG_OPTIONS = {'before_options': '-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5', 'options': '-vn'}
 
 
 '''SpotifyApi'''
-client_id = ""  # Сюда вводим полученные данные из панели спотифая
-secret = ""  # Сюда вводим полученные данные из панели спотифая
+client_id = "78a7bbd4b14d44f089471f96cff65c7f"  # Сюда вводим полученные данные из панели спотифая
+secret = "a9052a01b1a94306851d93742998921d"  # Сюда вводим полученные данные из панели спотифая
 
 auth_manager = SpotifyClientCredentials(client_id=client_id, client_secret=secret)
 spotify = spotipy.Spotify(auth_manager=auth_manager)
@@ -98,14 +98,6 @@ async def help_command(ctx):
     await ctx.message.channel.send(embed=em_help_music)
 
 
-@bot.command('трек')
-async def track(ctx):
-    em_play = discord.Embed(title="В последний раз играло:", description=music[0], colour=0x87CEEB)
-    em_play.set_author(name="Raxun", icon_url="https://avatars.githubusercontent.com/u/94015674?s=400&u=7d739"
-                                              "fe0e1593df54e804fb6e097f597a3a838d7&v=4")
-    await ctx.message.channel.send(embed=em_play)
-
-
 @bot.command('плейлист')
 async def playlist(ctx):
     if len(ctx.message.content) > 11:
@@ -139,8 +131,7 @@ async def playlist(ctx):
         em_playlist = discord.Embed(title="Плейлист", colour=0x87CEEB)
         em_playlist.set_author(name="Raxun", icon_url="https://avatars.githubusercontent.com/u/94015674?s=400&u=7d739"
                                                       "fe0e1593df54e804fb6e097f597a3a838d7&v=4")
-        for i, elem in enumerate(sp_music):
-            em_playlist.add_field(name=str(i + 1), value=elem, inline=False)
+        em_playlist.description = '\n'.join(sp_music)
         await ctx.message.channel.send(embed=em_playlist)
 
 
@@ -203,14 +194,6 @@ async def check_level(ctx):
         em_level_info.set_author(name="Raxun", icon_url="https://avatars.githubusercontent.com/u/94015674?s=400&"
                                                         "u=7d739fe0e1593df54e804fb6e097f597a3a838d7&v=4")
         await ctx.message.channel.send(embed=em_level_info)
-    else:
-        new_user = User()
-        new_user.id_user = ctx.message.author.id
-        new_user.id_server = ctx.message.guild.id
-        new_user.NumberOfMessage = '0/10'
-        new_user.lvl = 1
-        db_sess.add(new_user)
-        db_sess.commit()
 
 
 @bot.command('топ')
