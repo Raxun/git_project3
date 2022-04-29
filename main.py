@@ -13,13 +13,13 @@ from data.Roles import Roles
 intents = discord.Intents.default()
 intents.members = True
 bot = commands.Bot(command_prefix='!', intents=intents)
-TOKEN = "OTQ5OTYxODU1NDQ5ODQ5ODc2.YiR-6w.MejxbQtGJV3WwYbjnQDqaWlkEU0"
+TOKEN = ""
 FFMPEG_OPTIONS = {'before_options': '-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5', 'options': '-vn'}
 
 
 '''SpotifyApi'''
-client_id = "78a7bbd4b14d44f089471f96cff65c7f"  # Сюда вводим полученные данные из панели спотифая
-secret = "a9052a01b1a94306851d93742998921d"  # Сюда вводим полученные данные из панели спотифая
+client_id = ""  # Сюда вводим полученные данные из панели спотифая
+secret = ""  # Сюда вводим полученные данные из панели спотифая
 
 auth_manager = SpotifyClientCredentials(client_id=client_id, client_secret=secret)
 spotify = spotipy.Spotify(auth_manager=auth_manager)
